@@ -64,3 +64,37 @@ INSERT INTO categories (name, slug, icon) VALUES
   ('Perlengkapan Rumah', 'perlengkapan-rumah', '🏠'),
   ('Mainan & Hobi', 'mainan-hobi', '🎮')
 ON CONFLICT (slug) DO NOTHING;
+
+-- ================================================
+-- 6. Storage Buckets & Policies
+-- ================================================
+
+-- Buat bucket 'product-images' jika belum ada
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Kebijakan RLS untuk storage.objects (bucket 'product-images')
+
+-- 1. Siapapun bisa membaca/mendownload gambar
+CREATE POLICY "Public Read Access"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+-- 2. Hanya user terotentikasi yang bisa mengunggah (insert) gambar
+CREATE POLICY "Authenticated Insert Access"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'product-images');
+
+-- 3. Hanya user terotentikasi yang bisa memperbarui (update) gambar
+CREATE POLICY "Authenticated Update Access"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'product-images');
+
+-- 4. Hanya user terotentikasi yang bisa menghapus (delete) gambar
+CREATE POLICY "Authenticated Delete Access"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'product-images');
