@@ -56,7 +56,7 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium mb-6 border border-white/20">
               <Sparkles className="w-4 h-4 text-fuchsia-300" />
-              <span>Produk Pilihan Terbaik 2024</span>
+              <span>Produk Pilihan Terbaik {new Date().getFullYear()}</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
               Temukan Produk{' '}
