@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ShoppingBag, Share2, MessageCircle, Heart } from 'lucide-react'
+import { ShoppingBag, Share2, MessageCircle } from 'lucide-react'
 
 export default function Footer() {
   const categories = [
@@ -99,9 +99,22 @@ export default function Footer() {
           <p className="text-xs text-gray-500">
             © {new Date().getFullYear()} Rizmahira Shop. All rights reserved.
           </p>
-          <p className="text-xs text-gray-500 flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-fuchsia-500 fill-fuchsia-500" /> in Indonesia
-          </p>
+          <div className="text-xs text-gray-500 flex items-center gap-2">
+            <span>Made by</span>
+            <a
+              href="https://github.com/achsan490"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 font-semibold text-gray-300 hover:text-white transition-colors"
+            >
+              <img
+                src="/san-project.png"
+                alt="San Project Logo"
+                className="w-5 h-5 rounded-full object-cover border border-gray-800"
+              />
+              <span>San Project</span>
+            </a>
+          </div>
         </div>
       </div>
     </footer>
