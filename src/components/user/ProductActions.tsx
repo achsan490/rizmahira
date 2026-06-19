@@ -24,7 +24,9 @@ export default function ProductActions({ product, waLink }: ProductActionsProps)
     ? createWhatsAppLink(
         product.whatsapp_num || '+62 856-0496-9571',
         quantity > 1 ? `${product.name} (x${quantity})` : product.name,
-        product.price * quantity
+        product.price * quantity,
+        product.is_preorder,
+        product.preorder_days
       )
     : null
 

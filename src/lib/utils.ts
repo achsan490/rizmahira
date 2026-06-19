@@ -16,6 +16,8 @@ export type Product = {
   image_url: string | null
   is_active: boolean
   whatsapp_num: string | null
+  is_preorder?: boolean
+  preorder_days?: number
   created_at: string
   updated_at: string
   categories?: Category | null
@@ -32,10 +34,15 @@ export const formatRupiah = (amount: number): string => {
 export const createWhatsAppLink = (
   phone: string,
   productName: string,
-  price: number
+  price: number,
+  isPreorder?: boolean,
+  preorderDays?: number
 ): string => {
+  const preorderMsg = isPreorder
+    ? ` (Pre-Order ${preorderDays ? `${preorderDays} hari` : ''})`
+    : ''
   const message = encodeURIComponent(
-    `Halo, saya tertarik dengan produk *${productName}* seharga *${formatRupiah(price)}*. Apakah masih tersedia?`
+    `Halo, saya tertarik dengan produk *${productName}${preorderMsg}* seharga *${formatRupiah(price)}*. Apakah masih tersedia?`
   )
   const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '62')
   return `https://wa.me/${cleanPhone}?text=${message}`

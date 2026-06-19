@@ -95,7 +95,7 @@ export default async function AdminProductsPage() {
                             : 'bg-gray-100 text-gray-500'
                         }`}
                       >
-                        {product.is_active ? '● Aktif' : '● Nonaktif'}
+                        {product.is_active ? '● Tersedia' : '● Tidak Tersedia'}
                       </span>
                     </td>
                     <td className="px-6 py-4">

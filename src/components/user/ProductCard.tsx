@@ -14,8 +14,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart()
   const waLink =
     product.whatsapp_num
-      ? createWhatsAppLink(product.whatsapp_num, product.name, product.price)
-      : createWhatsAppLink('+62 856-0496-9571', product.name, product.price)
+      ? createWhatsAppLink(product.whatsapp_num, product.name, product.price, product.is_preorder, product.preorder_days)
+      : createWhatsAppLink('+62 856-0496-9571', product.name, product.price, product.is_preorder, product.preorder_days)
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-fuchsia-200 transition-all duration-300 hover:-translate-y-1">
@@ -48,6 +48,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="absolute top-3 left-3">
             <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-xs font-semibold text-purple-700 rounded-full shadow-sm">
               {product.categories.icon} {product.categories.name}
+            </span>
+          </div>
+        )}
+
+        {/* Pre-Order Badge */}
+        {product.is_preorder && (
+          <div className="absolute top-3 right-3 z-10">
+            <span className="px-2 py-1 bg-amber-500/90 backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-wider rounded-full shadow-sm">
+              Pre-Order
             </span>
           </div>
         )}

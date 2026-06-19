@@ -52,6 +52,8 @@ async function main() {
       image_url TEXT,
       is_active BOOLEAN DEFAULT TRUE,
       whatsapp_num TEXT,
+      is_preorder BOOLEAN DEFAULT FALSE,
+      preorder_days INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`,
@@ -59,6 +61,9 @@ async function main() {
     `CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id)`,
     `CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active)`,
     `CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC)`,
+    // Migration: Add preorder columns if not exists
+    `ALTER TABLE products ADD COLUMN IF NOT EXISTS is_preorder BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE products ADD COLUMN IF NOT EXISTS preorder_days INTEGER DEFAULT 0`,
     // RLS
     `ALTER TABLE categories ENABLE ROW LEVEL SECURITY`,
     `ALTER TABLE products ENABLE ROW LEVEL SECURITY`,

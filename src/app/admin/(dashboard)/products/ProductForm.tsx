@@ -26,6 +26,8 @@ interface ProductFormProps {
     image_url: string | null
     is_active: boolean
     whatsapp_num: string | null
+    is_preorder?: boolean
+    preorder_days?: number
   }
 }
 
@@ -44,6 +46,8 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState(product?.image_url ?? '')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(product?.image_url ?? '')
+  const [isPreorder, setIsPreorder] = useState(product?.is_preorder ?? false)
+  const [preorderDays, setPreorderDays] = useState(product?.preorder_days?.toString() ?? '7')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -108,6 +112,8 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
       image_url: finalImageUrl || null,
       is_active: isActive,
       whatsapp_num: whatsappNum || null,
+      is_preorder: isPreorder,
+      preorder_days: isPreorder ? parseInt(preorderDays) || 0 : 0,
       updated_at: new Date().toISOString(),
     }
 
@@ -315,7 +321,49 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
               </select>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
+            {/* Pre-Order Toggle */}
+            <div className="pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  id="product-preorder-toggle"
+                  onClick={() => setIsPreorder(!isPreorder)}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                    isPreorder ? 'bg-fuchsia-500' : 'bg-gray-200'
+                  }`}
+                  aria-label="Toggle status pre-order"
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                      isPreorder ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-gray-700">
+                  Sistem Pre-Order
+                </span>
+              </div>
+            </div>
+
+            {isPreorder && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                <label htmlFor="product-preorder-days" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Estimasi Waktu Proses (Hari)
+                </label>
+                <input
+                  id="product-preorder-days"
+                  type="number"
+                  value={preorderDays}
+                  onChange={(e) => setPreorderDays(e.target.value)}
+                  required
+                  min="1"
+                  placeholder="7"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:border-transparent transition-all bg-gray-50"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
               <button
                 type="button"
                 id="product-active-toggle"
@@ -332,7 +380,7 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
                 />
               </button>
               <span className="text-sm font-medium text-gray-700">
-                {isActive ? 'Produk Aktif' : 'Produk Nonaktif'}
+                {isActive ? 'Produk Tersedia (Ready)' : 'Produk Tidak Tersedia (Kosong)'}
               </span>
             </div>
           </div>

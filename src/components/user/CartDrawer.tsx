@@ -26,7 +26,10 @@ export default function CartDrawer() {
     const lineItemsText = cart
       .map((item, index) => {
         const catIcon = item.product.categories?.icon || '📦'
-        return `${index + 1}. ${catIcon} *${item.product.name}* (Qty: ${item.quantity}) - ${formatRupiah(
+        const preorderLabel = item.product.is_preorder
+          ? ` *(PRE-ORDER ${item.product.preorder_days ? `${item.product.preorder_days} Hari` : ''})*`
+          : ''
+        return `${index + 1}. ${catIcon} *${item.product.name}*${preorderLabel} (Qty: ${item.quantity}) - ${formatRupiah(
           item.product.price * item.quantity
         )}`
       })
@@ -146,9 +149,16 @@ export default function CartDrawer() {
                               </h3>
                               <p className="ml-4 text-fuchsia-600">{formatRupiah(item.product.price * item.quantity)}</p>
                             </div>
-                            <p className="mt-0.5 text-xs text-gray-400">
-                              {item.product.categories?.icon} {item.product.categories?.name}
-                            </p>
+                            <div className="mt-0.5 text-xs text-gray-400 flex flex-wrap items-center gap-1.5">
+                              <span>
+                                {item.product.categories?.icon} {item.product.categories?.name}
+                              </span>
+                              {item.product.is_preorder && (
+                                <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded">
+                                  Pre-Order
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between text-xs">

@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS products (
   image_url     TEXT,
   is_active     BOOLEAN DEFAULT TRUE,
   whatsapp_num  TEXT,
+  is_preorder   BOOLEAN DEFAULT FALSE,
+  preorder_days INTEGER DEFAULT 0,
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );

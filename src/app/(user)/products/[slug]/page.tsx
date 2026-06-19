@@ -42,8 +42,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   if (!product) notFound()
 
   const waLink = product.whatsapp_num
-    ? createWhatsAppLink(product.whatsapp_num, product.name, product.price)
-    : createWhatsAppLink('+62 856-0496-9571', product.name, product.price)
+    ? createWhatsAppLink(product.whatsapp_num, product.name, product.price, product.is_preorder, product.preorder_days)
+    : createWhatsAppLink('+62 856-0496-9571', product.name, product.price, product.is_preorder, product.preorder_days)
 
   // Related products
   const { data: related } = await supabase
@@ -105,15 +105,22 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
         {/* Info */}
         <div className="flex flex-col">
-          {product.categories && (
-            <Link
-              href={`/products?category=${(product.categories as any).slug}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full w-fit mb-4 hover:bg-purple-200 transition-colors"
-            >
-              <Tag className="w-3 h-3" />
-              {(product.categories as any).icon} {(product.categories as any).name}
-            </Link>
-          )}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {product.categories && (
+              <Link
+                href={`/products?category=${(product.categories as any).slug}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full w-fit hover:bg-purple-200 transition-colors"
+              >
+                <Tag className="w-3 h-3" />
+                {(product.categories as any).icon} {(product.categories as any).name}
+              </Link>
+            )}
+            {product.is_preorder && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full w-fit">
+                ⏱️ Pre-Order {product.preorder_days && product.preorder_days > 0 ? `(${product.preorder_days} Hari)` : ''}
+              </span>
+            )}
+          </div>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-3">{product.name}</h1>
 
