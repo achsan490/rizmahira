@@ -2,10 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Tag, Clock } from 'lucide-react'
-import { formatRupiah, createWhatsAppLink } from '@/lib/utils'
 import type { Metadata } from 'next'
-import ProductActions from '@/components/user/ProductActions'
+import ProductDetailView from '@/components/user/ProductDetailView'
+import { formatRupiah } from '@/lib/utils'
 
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>
@@ -34,16 +33,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   const { data: product } = await supabase
     .from('products')
-    .select('*, categories(*)')
+    .select('*, categories(*), product_variants(*)')
     .eq('slug', slug)
     .eq('is_active', true)
     .single()
 
   if (!product) notFound()
-
-  const waLink = product.whatsapp_num
-    ? createWhatsAppLink(product.whatsapp_num, product.name, product.price, product.is_preorder, product.preorder_days)
-    : createWhatsAppLink('+62 856-0496-9571', product.name, product.price, product.is_preorder, product.preorder_days)
 
   // Related products
   const { data: related } = await supabase
@@ -76,79 +71,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         <span className="text-gray-800 font-medium truncate max-w-[200px]">{product.name}</span>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
-        {/* Image */}
-        <div className="relative aspect-square bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-3xl overflow-hidden shadow-md">
-          {product.image_url ? (
-            product.image_url.includes('supabase.co') ? (
-              <Image
-                src={product.image_url}
-                alt={product.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-              />
-            ) : (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            )
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-8xl opacity-30">🛍️</span>
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex flex-col">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {product.categories && (
-              <Link
-                href={`/products?category=${(product.categories as any).slug}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full w-fit hover:bg-purple-200 transition-colors"
-              >
-                <Tag className="w-3 h-3" />
-                {(product.categories as any).icon} {(product.categories as any).name}
-              </Link>
-            )}
-            {product.is_preorder && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full w-fit">
-                ⏱️ Pre-Order {product.preorder_days && product.preorder_days > 0 ? `(${product.preorder_days} Hari)` : ''}
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">{product.name}</h1>
-
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-4xl font-bold bg-gradient-to-r from-fuchsia-600 to-purple-700 bg-clip-text text-transparent">
-              {formatRupiah(product.price)}
-            </span>
-          </div>
-
-          {product.description && (
-            <div className="mb-8">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Deskripsi Produk</h2>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                {product.description}
-              </p>
-            </div>
-          )}
-
-          <div className="mt-auto">
-            <ProductActions product={product as any} waLink={waLink} />
-          </div>
-
-          <div className="mt-6 flex items-center gap-2 text-xs text-gray-400">
-            <Clock className="w-3 h-3" />
-            Ditambahkan {new Date(product.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}
-          </div>
-        </div>
-      </div>
+      {/* Main Product Details View */}
+      <ProductDetailView product={product as any} />
 
       {/* Related Products */}
       {related && related.length > 0 && (

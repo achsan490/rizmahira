@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { slugify } from '@/lib/utils'
 import Image from 'next/image'
-import { Upload, X, ArrowLeft, Save } from 'lucide-react'
+import { Upload, X, ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category {
@@ -28,6 +28,13 @@ interface ProductFormProps {
     whatsapp_num: string | null
     is_preorder?: boolean
     preorder_days?: number
+    product_variants?: {
+      id: string
+      name: string
+      price: number | null
+      image_url: string | null
+      is_active: boolean
+    }[]
   }
 }
 
@@ -48,8 +55,33 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
   const [imagePreview, setImagePreview] = useState(product?.image_url ?? '')
   const [isPreorder, setIsPreorder] = useState(product?.is_preorder ?? false)
   const [preorderDays, setPreorderDays] = useState(product?.preorder_days?.toString() ?? '7')
+  const [useVariants, setUseVariants] = useState(
+    (product?.product_variants && product.product_variants.length > 0) ?? false
+  )
+  const [variants, setVariants] = useState<{ id?: string; name: string; price: string; image_url: string }[]>(
+    product?.product_variants?.map((v) => ({
+      id: v.id,
+      name: v.name,
+      price: v.price?.toString() ?? '',
+      image_url: v.image_url ?? '',
+    })) ?? []
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handleAddVariant = () => {
+    setVariants([...variants, { name: '', price: '', image_url: '' }])
+  }
+
+  const handleRemoveVariant = (index: number) => {
+    setVariants(variants.filter((_, i) => i !== index))
+  }
+
+  const handleVariantChange = (index: number, field: string, value: string) => {
+    setVariants(
+      variants.map((v, i) => (i === index ? { ...v, [field]: value } : v))
+    )
+  }
 
   const handleNameChange = (val: string) => {
     setName(val)
@@ -118,12 +150,51 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
     }
 
     let dbError
+    let productId = product?.id
+
     if (isEdit) {
       const { error } = await supabase.from('products').update(payload).eq('id', product!.id)
       dbError = error
     } else {
-      const { error } = await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() })
+      const { data: insertedData, error } = await supabase
+        .from('products')
+        .insert({ ...payload, created_at: new Date().toISOString() })
+        .select('id')
+        .single()
       dbError = error
+      if (insertedData) {
+        productId = insertedData.id
+      }
+    }
+
+    if (!dbError && productId) {
+      // Hapus varian lama
+      await supabase.from('product_variants').delete().eq('product_id', productId)
+
+      // Simpan varian baru jika aktif
+      if (useVariants && variants.length > 0) {
+        const variantsPayload = variants
+          .filter((v) => v.name.trim() !== '')
+          .map((v) => ({
+            product_id: productId,
+            name: v.name.trim(),
+            price: v.price ? parseFloat(v.price) : null,
+            image_url: v.image_url.trim() || null,
+            is_active: true,
+          }))
+
+        if (variantsPayload.length > 0) {
+          const { error: variantError } = await supabase
+            .from('product_variants')
+            .insert(variantsPayload)
+          
+          if (variantError) {
+            setError('Produk tersimpan, tetapi gagal menyimpan varian: ' + variantError.message)
+            setIsLoading(false)
+            return
+          }
+        }
+      }
     }
 
     if (dbError) {
@@ -212,6 +283,105 @@ export default function ProductForm({ categories, product }: ProductFormProps) {
                 <p className="text-xs text-gray-400 mt-1">Format: 628xxx (tanpa + atau spasi)</p>
               </div>
             </div>
+          </div>
+
+          {/* Varian Produk */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="font-semibold text-gray-800">Varian Produk</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Aktifkan jika produk memiliki pilihan warna, ukuran, dll.</p>
+              </div>
+              <button
+                type="button"
+                id="product-use-variants-toggle"
+                onClick={() => {
+                  setUseVariants(!useVariants)
+                  if (!useVariants && variants.length === 0) {
+                    setVariants([{ name: '', price: '', image_url: '' }])
+                  }
+                }}
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                  useVariants ? 'bg-fuchsia-500' : 'bg-gray-200'
+                }`}
+                aria-label="Toggle varian"
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                    useVariants ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {useVariants && (
+              <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="space-y-3">
+                  {variants.map((variant, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-gray-50 p-4 rounded-xl relative group border border-gray-100">
+                      <div className="flex-1 w-full">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                          Nama Varian <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={variant.name}
+                          onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                          required
+                          placeholder="Contoh: Merah, XL, atau 2 Lapis"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:border-transparent transition-all bg-white"
+                        />
+                      </div>
+
+                      <div className="w-full sm:w-44">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                          Harga Khusus (Rp)
+                        </label>
+                        <input
+                          type="number"
+                          value={variant.price}
+                          onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                          placeholder="Sama dengan produk"
+                          min="0"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:border-transparent transition-all bg-white"
+                        />
+                      </div>
+
+                      <div className="flex-1 w-full">
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                          URL Gambar Varian
+                        </label>
+                        <input
+                          type="url"
+                          value={variant.image_url}
+                          onChange={(e) => handleVariantChange(index, 'image_url', e.target.value)}
+                          placeholder="https://example.com/gambar.jpg"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-fuchsia-400 focus:border-transparent transition-all bg-white font-mono"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVariant(index)}
+                        className="absolute sm:static top-2 right-2 text-gray-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 sm:mt-5 transition-colors cursor-pointer"
+                        title="Hapus varian"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddVariant}
+                  className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 text-xs font-semibold hover:border-fuchsia-300 hover:text-fuchsia-600 hover:bg-fuchsia-50/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah Varian
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

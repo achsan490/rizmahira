@@ -1,20 +1,21 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react'
-import { type Product } from '@/lib/utils'
+import { type Product, type ProductVariant } from '@/lib/utils'
 
 export type CartItem = {
   product: Product
   quantity: number
+  selectedVariant?: ProductVariant | null
 }
 
 interface CartContextType {
   cart: CartItem[]
   isCartOpen: boolean
   setIsCartOpen: (open: boolean) => void
-  addToCart: (product: Product, quantity?: number) => void
-  removeFromCart: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  addToCart: (product: Product, quantity?: number, selectedVariant?: ProductVariant | null) => void
+  removeFromCart: (productId: string, variantId?: string | null) => void
+  updateQuantity: (productId: string, quantity: number, variantId?: string | null) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
@@ -50,33 +51,45 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cart, isInitialized])
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, selectedVariant: ProductVariant | null = null) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id)
+      const existingItem = prevCart.find(
+        (item) =>
+          item.product.id === product.id &&
+          item.selectedVariant?.id === selectedVariant?.id
+      )
       if (existingItem) {
         return prevCart.map((item) =>
-          item.product.id === product.id
+          item.product.id === product.id &&
+          item.selectedVariant?.id === selectedVariant?.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       }
-      return [...prevCart, { product, quantity }]
+      return [...prevCart, { product, quantity, selectedVariant }]
     })
     setIsCartOpen(true)
   }
 
-  const removeFromCart = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId))
+  const removeFromCart = (productId: string, variantId: string | null = null) => {
+    setCart((prevCart) =>
+      prevCart.filter(
+        (item) =>
+          !(item.product.id === productId && item.selectedVariant?.id === variantId)
+      )
+    )
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, variantId: string | null = null) => {
     if (quantity <= 0) {
-      removeFromCart(productId)
+      removeFromCart(productId, variantId)
       return
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
+        item.product.id === productId && item.selectedVariant?.id === variantId
+          ? { ...item, quantity }
+          : item
       )
     )
   }
@@ -86,7 +99,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const totalItems = cart.reduce((total, item) => total + item.quantity, 0)
-  const totalPrice = cart.reduce((total, item) => total + item.product.price * item.quantity, 0)
+  const totalPrice = cart.reduce((total, item) => {
+    const price = item.selectedVariant?.price ?? item.product.price
+    return total + price * item.quantity
+  }, 0)
 
   return (
     <CartContext.Provider

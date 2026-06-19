@@ -29,8 +29,12 @@ export default function CartDrawer() {
         const preorderLabel = item.product.is_preorder
           ? ` *(PRE-ORDER ${item.product.preorder_days ? `${item.product.preorder_days} Hari` : ''})*`
           : ''
-        return `${index + 1}. ${catIcon} *${item.product.name}*${preorderLabel} (Qty: ${item.quantity}) - ${formatRupiah(
-          item.product.price * item.quantity
+        const variantLabel = item.selectedVariant
+          ? ` [Varian: ${item.selectedVariant.name}]`
+          : ''
+        const itemPrice = item.selectedVariant?.price ?? item.product.price
+        return `${index + 1}. ${catIcon} *${item.product.name}*${variantLabel}${preorderLabel} (Qty: ${item.quantity}) - ${formatRupiah(
+          itemPrice * item.quantity
         )}`
       })
       .join('\n')
@@ -112,28 +116,26 @@ export default function CartDrawer() {
                       <div key={item.product.id} className="flex py-4 border-b border-gray-50 last:border-0">
                         {/* Product Image */}
                         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-                          {item.product.image_url ? (
-                            isSupabaseUrl(item.product.image_url) ? (
-                              <Image
-                                src={item.product.image_url}
-                                alt={item.product.name}
-                                fill
-                                className="object-cover"
-                                sizes="80px"
-                              />
-                            ) : (
-                              <img
-                                src={item.product.image_url}
-                                alt={item.product.name}
-                                className="absolute inset-0 w-full h-full object-cover"
-                              />
-                            )
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-2xl">
-                              📦
-                            </div>
-                          )}
-                        </div>
+                           {(() => {
+                             const itemImageUrl = item.selectedVariant?.image_url ?? item.product.image_url
+                             if (!itemImageUrl) return <div className="absolute inset-0 flex items-center justify-center text-2xl">📦</div>
+                             return isSupabaseUrl(itemImageUrl) ? (
+                               <Image
+                                 src={itemImageUrl}
+                                 alt={item.product.name}
+                                 fill
+                                 className="object-cover"
+                                 sizes="80px"
+                               />
+                             ) : (
+                               <img
+                                 src={itemImageUrl}
+                                 alt={item.product.name}
+                                 className="absolute inset-0 w-full h-full object-cover"
+                               />
+                             )
+                           })()}
+                         </div>
 
                         {/* Product Details */}
                         <div className="ml-4 flex flex-1 flex-col justify-between">
@@ -147,12 +149,19 @@ export default function CartDrawer() {
                                   {item.product.name}
                                 </Link>
                               </h3>
-                              <p className="ml-4 text-fuchsia-600">{formatRupiah(item.product.price * item.quantity)}</p>
+                              <p className="ml-4 text-fuchsia-600">
+                                {formatRupiah((item.selectedVariant?.price ?? item.product.price) * item.quantity)}
+                              </p>
                             </div>
                             <div className="mt-0.5 text-xs text-gray-400 flex flex-wrap items-center gap-1.5">
                               <span>
                                 {item.product.categories?.icon} {item.product.categories?.name}
                               </span>
+                              {item.selectedVariant && (
+                                <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-semibold rounded">
+                                  Varian: {item.selectedVariant.name}
+                                </span>
+                              )}
                               {item.product.is_preorder && (
                                 <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded">
                                   Pre-Order
@@ -167,7 +176,7 @@ export default function CartDrawer() {
                               <button
                                 type="button"
                                 className="p-1.5 text-gray-500 hover:text-fuchsia-600 transition-colors"
-                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id)}
                                 aria-label="Kurangi kuantitas"
                               >
                                 <Minus className="w-3.5 h-3.5" />
@@ -178,7 +187,7 @@ export default function CartDrawer() {
                               <button
                                 type="button"
                                 className="p-1.5 text-gray-500 hover:text-fuchsia-600 transition-colors"
-                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id)}
                                 aria-label="Tambah kuantitas"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -188,7 +197,7 @@ export default function CartDrawer() {
                             {/* Remove Button */}
                             <button
                               type="button"
-                              onClick={() => removeFromCart(item.product.id)}
+                              onClick={() => removeFromCart(item.product.id, item.selectedVariant?.id)}
                               className="font-medium text-red-500 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex items-center gap-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

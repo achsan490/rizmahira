@@ -29,14 +29,28 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 2b. Tabel Varian Produk
+CREATE TABLE IF NOT EXISTS product_variants (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id    UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,
+  price         NUMERIC(12, 2) DEFAULT NULL,
+  image_url     TEXT DEFAULT NULL,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 3. Index untuk performa query
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_variants_product_id ON product_variants(product_id);
 
 -- 4. Row Level Security (RLS)
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY;
 
 -- Siapapun bisa baca (halaman user publik)
 CREATE POLICY "categories_public_read" ON categories
@@ -45,11 +59,17 @@ CREATE POLICY "categories_public_read" ON categories
 CREATE POLICY "products_public_read" ON products
   FOR SELECT USING (is_active = true);
 
+CREATE POLICY "variants_public_read" ON product_variants
+  FOR SELECT USING (is_active = true);
+
 -- Hanya user terotentikasi (admin) yang bisa write
 CREATE POLICY "categories_auth_all" ON categories
   FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "products_auth_all" ON products
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "variants_auth_all" ON product_variants
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- Admin bisa lihat semua produk termasuk yang nonaktif

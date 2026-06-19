@@ -57,16 +57,28 @@ async function main() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS product_variants (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      price NUMERIC(12, 2) DEFAULT NULL,
+      image_url TEXT DEFAULT NULL,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Indexes
     `CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id)`,
     `CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active)`,
     `CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_variants_product_id ON product_variants(product_id)`,
     // Migration: Add preorder columns if not exists
     `ALTER TABLE products ADD COLUMN IF NOT EXISTS is_preorder BOOLEAN DEFAULT FALSE`,
     `ALTER TABLE products ADD COLUMN IF NOT EXISTS preorder_days INTEGER DEFAULT 0`,
     // RLS
     `ALTER TABLE categories ENABLE ROW LEVEL SECURITY`,
     `ALTER TABLE products ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE product_variants ENABLE ROW LEVEL SECURITY`,
     // Policies
     `DO $$ BEGIN
       IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'categories' AND policyname = 'categories_public_read') THEN
@@ -79,6 +91,11 @@ async function main() {
       END IF;
     END $$`,
     `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'product_variants' AND policyname = 'variants_public_read') THEN
+        CREATE POLICY "variants_public_read" ON product_variants FOR SELECT USING (is_active = true);
+      END IF;
+    END $$`,
+    `DO $$ BEGIN
       IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'categories' AND policyname = 'categories_auth_all') THEN
         CREATE POLICY "categories_auth_all" ON categories FOR ALL USING (auth.role() = 'authenticated');
       END IF;
@@ -86,6 +103,11 @@ async function main() {
     `DO $$ BEGIN
       IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'products' AND policyname = 'products_auth_all') THEN
         CREATE POLICY "products_auth_all" ON products FOR ALL USING (auth.role() = 'authenticated');
+      END IF;
+    END $$`,
+    `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'product_variants' AND policyname = 'variants_auth_all') THEN
+        CREATE POLICY "variants_auth_all" ON product_variants FOR ALL USING (auth.role() = 'authenticated');
       END IF;
     END $$`,
     `DO $$ BEGIN
